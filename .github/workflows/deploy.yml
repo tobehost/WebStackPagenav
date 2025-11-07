@@ -1,0 +1,76 @@
+# .github/workflows/deploy.yml
+name: Deploy Flask to Cloudflare Tunnel
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        python -m pytest
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: |
+        docker build -t navpage:latest .
+
+    - name: Setup Cloudflared
+      run: |
+        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+        sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
+        sudo chmod +x /usr/local/bin/cloudflared
+
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USERNAME }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          cd /opt/navpage
+          
+          # Pull latest code
+          git pull origin main
+          
+          # Install dependencies
+          python3 -m pip install -r requirements.txt
+          
+          # Stop existing service
+          sudo systemctl stop navpage || true
+          
+          # Start Cloudflare Tunnel
+          cloudflared tunnel stop navpage-tunnel || true
+          cloudflared tunnel run navpage-tunnel &
+          
+          # Start Flask application
+          sudo systemctl start navpage
