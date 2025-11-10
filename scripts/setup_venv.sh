@@ -1,12 +1,4 @@
-# app/app.py
-from flask import Flask, render_template
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-# setup_venv.sh
+#!/usr/bin/env bash
 #!/usr/bin/env bash
 set -euo pipefail
 # 创建并初始化虚拟环境脚本

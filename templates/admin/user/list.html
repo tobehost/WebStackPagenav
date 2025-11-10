@@ -1,0 +1,39 @@
+{% extends 'admin/model/list.html' %}
+
+{% block body %}
+  <h2>用户管理</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block list_header %}
+  <div class="mb-3">
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle"></i>
+      找回密码凭证：预设的6位数字，用户可以使用此凭证在忘记密码时进行密码重置。
+    </div>
+    <div class="d-flex justify-content-between">
+      <div>
+        {{ super() }}
+      </div>
+      <div>
+        <a class="btn btn-sm btn-primary" href="{{ url_for('user.create_view') }}">
+          <i class="fas fa-user-plus"></i> 新建用户
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block list_row_actions %}
+  {{ super() }}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    $(document).ready(function() {
+      // 用户列表页面的自定义JavaScript
+      console.log('用户管理页面加载完成');
+    });
+  </script>
+{% endblock %}

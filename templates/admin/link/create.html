@@ -1,0 +1,25 @@
+{% extends 'admin/model/create.html' %}
+
+{% block body %}
+  <h2>创建链接</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block create_form %}
+  {{ super() }}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    $(document).ready(function() {
+      // 链接创建页面的自定义JavaScript
+      $('#url').on('blur', function() {
+        var url = $(this).val();
+        if (url && !url.startsWith('http')) {
+          $(this).val('https://' + url);
+        }
+      });
+    });
+  </script>
+{% endblock %}

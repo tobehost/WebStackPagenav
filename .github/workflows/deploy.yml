@@ -1,76 +1,98 @@
 # .github/workflows/deploy.yml
-name: Deploy Flask to Cloudflare Tunnel
+name: 部署到服务器
 
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   test:
+    name: 运行测试
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Python
+    - name: 设置 Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: '3.12'
     
-    - name: Install dependencies
+    - name: 安装依赖
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
-    - name: Test with pytest
-      run: |
         pip install pytest
+    
+    - name: 运行测试
+      run: |
         python -m pytest
 
-  build-and-deploy:
+  deploy:
+    name: 部署应用
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     
     steps:
-    - uses: actions/checkout@v4
+    - name: 检出代码
+      uses: actions/checkout@v4
 
-    - name: Build Docker image
-      run: |
-        docker build -t navpage:latest .
-
-    - name: Setup Cloudflared
-      run: |
-        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
-        sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
-        sudo chmod +x /usr/local/bin/cloudflared
-
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@v1.0.3
+    - name: 部署到服务器
+      uses: appleboy/ssh-action@v1
       with:
         host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USERNAME }}
+        username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_SSH_PORT || 22 }}
         script: |
+          set -e
+          echo "开始部署..."
+          
+          # 1. 进入项目目录
           cd /opt/navpage
           
-          # Pull latest code
-          git pull origin main
+          # 2. 拉取最新代码
+          git fetch --all
+          git reset --hard ${{ github.sha }}
           
-          # Install dependencies
-          python3 -m pip install -r requirements.txt
+          # 3. 更新 Python 环境
+          echo "更新 Python 环境..."
+          python3 -m venv .venv || true
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
           
-          # Stop existing service
-          sudo systemctl stop navpage || true
+          # 4. 重启应用服务
+          echo "重启应用服务..."
+          sudo systemctl daemon-reload
+          sudo systemctl restart navpage.service
+          sleep 2
           
-          # Start Cloudflare Tunnel
-          cloudflared tunnel stop navpage-tunnel || true
-          cloudflared tunnel run navpage-tunnel &
+          # 5. 确保 cloudflared 在运行（如果配置为 systemd 服务）
+          if systemctl is-active --quiet cloudflared; then
+            echo "重启 cloudflared 服务..."
+            sudo systemctl restart cloudflared
+            sleep 2
+          fi
           
-          # Start Flask application
-          sudo systemctl start navpage
+          # 6. 验证服务状态
+          echo "检查服务状态..."
+          sudo systemctl status navpage.service --no-pager | head -n 3
+          
+          if ! systemctl is-active --quiet navpage.service; then
+            echo "错误：navpage 服务未能正常启动"
+            sudo journalctl -u navpage.service -n 20 --no-pager
+            exit 1
+          fi
+          
+          if systemctl is-active --quiet cloudflared; then
+            echo "检查 cloudflared 状态..."
+            sudo systemctl status cloudflared --no-pager | head -n 3
+            if ! systemctl is-active --quiet cloudflared; then
+              echo "警告：cloudflared 服务未能正常启动"
+              sudo journalctl -u cloudflared -n 20 --no-pager
+            fi
+          fi
+          
+          echo "部署完成!"

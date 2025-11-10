@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Milaifon" />
+    <title>{% block title %}工具资源网址导航|繁星starsea{% endblock %}</title>
+    <meta name="keywords" content="starsea,navpage,nav.apescope.com">
+    <meta name="description" content="繁星(starsea)项目附属产品:navpage,导航页,网址、工具、设计、开发导航。">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.png') }}">
+    
+    <!-- CSS文件 -->
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Arimo:400,700,400italic">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts/linecons/css/linecons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts/fontawesome/css/font-awesome.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/xenon-core.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/xenon-components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/xenon-skins.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nav.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="page-body">
+    {% block content %}{% endblock %}
+
+    <!-- JavaScript文件 -->
+    <script src="{{ url_for('static', filename='js/jquery-1.11.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

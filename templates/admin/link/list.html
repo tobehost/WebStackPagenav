@@ -1,0 +1,36 @@
+{% extends 'admin/model/list.html' %}
+
+{% block body %}
+  <h2>链接管理</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block list_header %}
+  <div class="d-flex justify-content-between mb-2">
+    <div>
+      {{ super() }}
+    </div>
+    <div>
+      <a class="btn btn-sm btn-success" href="{{ url_for('link.create_view') }}">
+        <i class="fas fa-plus"></i> 新建链接
+      </a>
+    </div>
+  </div>
+{% endblock %}
+
+{% block list_row_actions %}
+  {{ super() }}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    $(document).ready(function() {
+      // 链接列表页面的自定义JavaScript
+      $('.view-link').on('click', function() {
+        var url = $(this).data('url');
+        window.open(url, '_blank');
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block body %}
+  <h2>编辑用户</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block edit_form %}
+  <div class="admin-form">
+    {{ super() }}
+    <div class="alert alert-info mt-3">
+      <h5>编辑说明：</h5>
+      <ul>
+        <li><strong>用户名：</strong>登录系统使用的唯一标识</li>
+        <li><strong>密码：</strong>如需修改请输入新密码，至少6位字符</li>
+        <li><strong>找回密码凭证：</strong>必须是6位数字，用于密码重置</li>
+        <li><strong>是否管理员：</strong>勾选后将拥有管理权限</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    $(document).ready(function() {
+      // 用户编辑页面的自定义JavaScript
+      // 可以在这里添加表单验证等
+    });
+  </script>
+{% endblock %}

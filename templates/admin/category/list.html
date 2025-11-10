@@ -1,0 +1,33 @@
+{% extends 'admin/model/list.html' %}
+
+{% block body %}
+  <h2>分类管理</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block list_header %}
+  <div class="d-flex justify-content-between mb-2">
+    <div>
+      {{ super() }}
+    </div>
+    <div>
+      <a class="btn btn-sm btn-primary" href="{{ url_for('category.create_view') }}">
+        <i class="fas fa-plus"></i> 新建分类
+      </a>
+    </div>
+  </div>
+{% endblock %}
+
+{% block list_row_actions %}
+  {{ super() }}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    // 自定义分类列表页面的JavaScript
+    $(document).ready(function() {
+      console.log('分类列表页面加载完成');
+    });
+  </script>
+{% endblock %}

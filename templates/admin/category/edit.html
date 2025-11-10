@@ -1,0 +1,20 @@
+{% extends 'admin/model/edit.html' %}
+
+{% block body %}
+  <h2>编辑分类</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block edit_form %}
+  {{ super() }}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    // 自定义分类编辑页面的JavaScript
+    $(document).ready(function() {
+      // 可以在这里添加表单验证等
+    });
+  </script>
+{% endblock %}
