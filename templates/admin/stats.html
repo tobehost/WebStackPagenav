@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block title %}详细统计 - 导航站管理后台{% endblock %}
+
+{% block body %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">详细统计</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回仪表盘
+        </a>
+    </div>
+</div>
+
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> 统计功能正在开发中，敬请期待更多详细的数据分析功能。
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">系统概览</h5>
+            </div>
+            <div class="card-body">
+                <p>这里是详细的统计信息页面，未来将包含：</p>
+                <ul>
+                    <li>链接点击统计</li>
+                    <li>用户活跃度分析</li>
+                    <li>分类热度排行</li>
+                    <li>时间趋势图表</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

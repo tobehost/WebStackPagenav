@@ -1,0 +1,33 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                <i class="fas fa-trash-alt"></i>
+                删除{{ admin_view.name }}
+            </h4>
+        </div>
+        <div class="card-body">
+            <p>您确定要删除以下{{ admin_view.name }}吗？此操作无法撤销。</p>
+            <ul>
+                {% for field in form %}
+                <li><strong>{{ field.label.text }}:</strong> {{ field.data }}</li>
+                {% endfor %}
+            </ul>
+            <form method="POST" action="delete_model">
+                {{ form.csrf_token }}
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('.index_view') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 取消
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> 删除
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

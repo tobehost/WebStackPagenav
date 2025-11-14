@@ -1,0 +1,68 @@
+{% extends 'admin/base.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                <i class="fas fa-eye"></i>
+                查看详情 - {{ admin_view.name }}
+            </h4>
+        </div>
+        <div class="card-body">
+            {% block details_table %}
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    {% for field in model._fields %}
+                    {% if field in details_columns %}
+                    <tr>
+                        <th style="width: 20%">{{ admin_view.column_labels.get(field, field) }}</th>
+                        <td>
+                            {% set value = get_value(model, field) %}
+                            {% if value is none %}
+                            <span class="text-muted">空</span>
+                            {% else %}
+                            {{ value }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endblock %}
+        </div>
+        <div class="card-footer">
+            <div class="btn-group">
+                <a href="{{ url_for('.index_view') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> 返回列表
+                </a>
+                <a href="{{ url_for('.edit_view', id=model.id) }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> 编辑
+                </a>
+                <a href="{{ url_for('.delete_view', id=model.id) }}" class="btn btn-danger"
+                   onclick="return confirm('确定要删除这条记录吗？此操作不可恢复。');">
+                    <i class="fas fa-trash"></i> 删除
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% macro get_value(model, field) %}
+    {% set value = model[field] %}
+    {% if value is iterable and value is not string %}
+        {{ value | join(', ') }}
+    {% elif value is boolean %}
+        {% if value %}
+            <span class="badge bg-success">是</span>
+        {% else %}
+            <span class="badge bg-secondary">否</span>
+        {% endif %}
+    {% elif field == 'created_at' or field == 'updated_at' %}
+        {{ value.strftime('%Y-%m-%d %H:%M:%S') if value else '' }}
+    {% else %}
+        {{ value }}
+    {% endif %}
+{% endmacro %}

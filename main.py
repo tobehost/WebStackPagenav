@@ -1,7 +1,15 @@
 # main.py
+"""
+此文件仅作为应用入口点，所有功能已移至相应模块：
+- 应用工厂: app/__init__.py
+- 主路由: app/routes/main.py
+- 认证路由: app/routes/auth.py
+- 数据中台: app/admin/views/
+"""
+
 from app import create_app
 
-app = create_app()
-
+# 如果直接运行此文件（仅用于开发环境）
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    app = create_app('development')
+    app.run(port=5002, debug=True)

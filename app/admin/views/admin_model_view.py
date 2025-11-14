@@ -1,6 +1,9 @@
-from flask import redirect, request, flash
+# app/admin/views/admin_model_view.py
+from flask import redirect, request, flash, url_for
 from flask_login import current_user
 from flask_admin.contrib.sqla import ModelView
+from importlib import import_module
+import logging
 
 class AdminModelView(ModelView):
     """
@@ -11,18 +14,25 @@ class AdminModelView(ModelView):
     page_size = 20
     can_view_details = True
     can_export = True
-    create_modal = True
-    edit_modal = True
-    details_modal = True
+    create_modal = False
+    edit_modal = False
+    details_modal = False
+    
+    # 模板配置 - 更新为新的路径
+    list_template = 'admin/model/list.html'
+    create_template = 'admin/model/create.html'
+    edit_template = 'admin/model/edit.html'
+    details_template = 'admin/model/details.html'
+    delete_template = 'admin/model/delete.html'
     
     def is_accessible(self):
-        """检查用户是否有权限访问"""
+        """检查用户是否有权限访问管理后台"""
         return current_user.is_authenticated and current_user.is_admin
     
     def inaccessible_callback(self, name, **kwargs):
-        """无权限访问时的回调"""
-        flash('您没有权限访问此页面', 'error')
-        return redirect('/admin/login')
+        """当用户无权限访问时的回调函数"""
+        flash('您需要登录才能访问管理后台', 'warning')
+        return redirect(url_for('auth.login', next=request.url))
     
     def on_model_change(self, form, model, is_created):
         """模型变更时的通用处理"""
@@ -42,73 +52,105 @@ class AdminModelView(ModelView):
     def after_model_delete(self, model):
         """模型删除后的处理"""
         pass
-    
-    def get_empty_list_message(self):
-        """空列表时的提示信息"""
-        return "暂无数据"
-    
-    def get_list_columns(self):
-        """获取列表显示的列"""
-        return super().get_list_columns()
 
-    # CRUD 操作统一在此处理，具体视图可以只实现钩子方法
-    def create_model(self, form):
-        """创建模型并提交到数据库，调用 after_model_created 钩子"""
+    def get_dao(self):
+        """返回关联的 DAO 实例；优先使用已设置的 self.dao，否则按约定动态导入 app.dao.<modelname>_dao.<ModelName>DAO"""
+        if getattr(self, 'dao', None):
+            return self.dao
+
+        model = getattr(self, 'model', None)
+        if not model:
+            return None
+
+        module_name = f"app.dao.{model.__name__.lower()}_dao"
+        class_name = f"{model.__name__}DAO"
         try:
-            model = self.model()
-            form.populate_obj(model)
-            self.session.add(model)
-            self.session.commit()
+            mod = import_module(module_name)
+            dao_cls = getattr(mod, class_name, None)
+            if dao_cls:
+                self.dao = dao_cls()
+                return self.dao
+        except Exception as e:
+            logging.debug("AdminModelView.get_dao: failed to import %s.%s: %s", module_name, class_name, e)
+        return None
+
+    def get_query(self):
+        """优先使用 DAO 提供的查询方法（不同 DAO 可能命名不同，按常见候选名尝试），否则回退到父类实现。"""
+        dao = self.get_dao()
+        if dao:
+            for candidate in ('get_query', 'query', 'list_query', 'get_read_query', 'get_read_session_query'):
+                if hasattr(dao, candidate):
+                    try:
+                        return getattr(dao, candidate)()
+                    except Exception:
+                        logging.debug("DAO.%s call failed", candidate, exc_info=True)
+        return super().get_query()
+
+    def get_count_query(self):
+        """优先使用 DAO 的计数查询/方法，否则回退到父类实现。"""
+        dao = self.get_dao()
+        if dao:
+            for candidate in ('get_count_query', 'count_query', 'count', 'get_count'):
+                if hasattr(dao, candidate):
+                    try:
+                        return getattr(dao, candidate)()
+                    except Exception:
+                        logging.debug("DAO.%s call failed", candidate, exc_info=True)
+        return super().get_count_query()
+
+    def create_model(self, form):
+        """创建时优先走 DAO.create(model) 或 DAO.create_from_dict，回退到父类实现。"""
+        dao = self.get_dao()
+        # 尝试使用 DAO 创建
+        if dao:
             try:
-                self.after_model_created(form, model)
-            except Exception:
-                # 钩子不应影响主流程，记录并继续
-                pass
-            return True
-        except Exception as ex:
-            self.session.rollback()
-            flash(f'创建失败: {ex}', 'error')
-            return False
+                # 填充 model 实例
+                model = self.model()
+                form.populate_obj(model)
+                # 支持两类 DAO 接口：create(model) 或 create_from_dict(dict)
+                if hasattr(dao, 'create'):
+                    dao.create(model)
+                    return True
+                if hasattr(dao, 'create_from_dict'):
+                    dao.create_from_dict(form.data)
+                    return True
+            except Exception as ex:
+                self.handle_view_exception(ex)
+                return False
+        # 回退到父类
+        return super().create_model(form)
 
     def update_model(self, form, model):
-        """更新模型并提交到数据库，调用 after_model_updated 钩子"""
-        try:
-            form.populate_obj(model)
-            self.session.add(model)
-            self.session.commit()
+        """更新时优先走 DAO.update(model) 或 DAO.update_from_dict(id, dict)，否则回退。"""
+        dao = self.get_dao()
+        if dao:
             try:
-                self.after_model_updated(form, model)
-            except Exception:
-                pass
-            return True
-        except Exception as ex:
-            self.session.rollback()
-            flash(f'更新失败: {ex}', 'error')
-            return False
+                form.populate_obj(model)
+                if hasattr(dao, 'update'):
+                    dao.update(model)
+                    return True
+                if hasattr(dao, 'update_from_dict'):
+                    key = getattr(model, 'id', None)
+                    dao.update_from_dict(key, form.data)
+                    return True
+            except Exception as ex:
+                self.handle_view_exception(ex)
+                return False
+        return super().update_model(form, model)
 
     def delete_model(self, model):
-        """删除模型前后调用钩子并提交变更"""
-        try:
-            # 先调用 before-delete 检查（如果实现为 on_model_delete）
+        """删除时优先走 DAO.delete(model) 或 DAO.delete_by_id(id)，否则回退。"""
+        dao = self.get_dao()
+        if dao:
             try:
-                ok = True
-                if hasattr(self, 'on_model_delete'):
-                    ok = self.on_model_delete(model)
-                if ok is False:
-                    return False
-            except Exception as e:
-                # 如果检查抛出异常，阻止删除并提示
-                flash(f'删除前检查失败: {e}', 'error')
+                if hasattr(dao, 'delete'):
+                    dao.delete(model)
+                    return True
+                if hasattr(dao, 'delete_by_id'):
+                    key = getattr(model, 'id', None)
+                    dao.delete_by_id(key)
+                    return True
+            except Exception as ex:
+                self.handle_view_exception(ex)
                 return False
-
-            self.session.delete(model)
-            self.session.commit()
-            try:
-                self.after_model_delete(model)
-            except Exception:
-                pass
-            return True
-        except Exception as ex:
-            self.session.rollback()
-            flash(f'删除失败: {ex}', 'error')
-            return False
+        return super().delete_model(model)

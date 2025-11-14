@@ -35,7 +35,7 @@
                 </li>
                 {% endfor %}
                 <li>
-                    <a href="{{ url_for('auth.login') }}">
+                    <a href="{{ url_for('auth.login'), '_blank' }}">
                         <i class="linecons-heart"></i>
                         <span class="tooltip-blue">管理后台</span>
                     </a>
@@ -56,13 +56,13 @@
             <ul class="user-info-menu right-links list-inline list-unstyled">
                 {% if current_user.is_authenticated %}
                 <li class="hidden-sm hidden-xs">
-                    <a href="{{ url_for('auth.logout') }}">
+                    <a href="{{ url_for('main.logout') }}">
                         <i class="fa-user"></i> 退出登录
                     </a>
                 </li>
                 {% else %}
                 <li class="hidden-sm hidden-xs">
-                    <a href="{{ url_for('auth.login') }}">
+                    <a href="{{ url_for('auth.login') ,'_blank' }}">
                         <i class="fa-user"></i> 管理员登录
                     </a>
                 </li>

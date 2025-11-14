@@ -1,64 +1,86 @@
 {% extends 'admin/base.html' %}
 
-{% block title %}创建 {{ admin_view.model.__name__ }} - 管理后台{% endblock %}
-
 {% block body %}
-<div class="container-fluid px-4">
-    <!-- 面包屑导航 -->
-    <nav aria-label="breadcrumb" class="my-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('admin.index') }}">首页</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for(admin_view.endpoint + '.index_view') }}">{{ admin_view.name }}</a></li>
-            <li class="breadcrumb-item active">创建</li>
-        </ol>
-    </nav>
-
-    <div class="card shadow-sm">
-        <div class="card-header bg-white py-3">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">创建{{ admin_view.name }}</h5>
-                <a href="{{ url_for(admin_view.endpoint + '.index_view') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="fa fa-arrow-left"></i> 返回列表
-                </a>
-            </div>
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                <i class="fas fa-plus"></i>
+                创建{{ admin_view.name }}
+            </h4>
         </div>
         <div class="card-body">
-            <div class="admin-create-form">
-                {% block create_form %}
-                    <!-- 子模板应在此处插入表单（例如调用 super() 以渲染默认表单） -->
-                {% endblock %}
-            </div>
-        </div>
-        <div class="card-footer bg-white py-3">
-            {% block tail_actions %}
-            <div class="d-flex justify-content-between">
-                <button type="button" class="btn btn-secondary" onclick="history.back()">取消</button>
-                <button type="submit" class="btn btn-primary" form="model-form">保存</button>
-            </div>
+            {% block create_form %}
+            <form method="POST" action="add_model()" enctype="multipart/form-data">
+                {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id }}" class="form-label">
+                        {{ field.label.text }}
+                        {% if field.flags.required %}
+                        <span class="text-danger">*</span>
+                        {% endif %}
+                    </label>
+                    
+                    {% if field.type == 'BooleanField' %}
+                    <div class="form-check">
+                        {{ field(class="form-check-input") }}
+                        <label class="form-check-label" for="{{ field.id }}">
+                            {{ field.description or '' }}
+                        </label>
+                    </div>
+                    {% elif field.type == 'SelectField' %}
+                    {{ field(class="form-select") }}
+                    {% elif field.type == 'TextAreaField' %}
+                    {{ field(class="form-control", rows=4) }}
+                    {% else %}
+                    {{ field(class="form-control") }}
+                    {% endif %}
+                    
+                    {% if field.description %}
+                    <div class="form-text">{{ field.description }}</div>
+                    {% endif %}
+                    
+                    {% if field.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in field.errors %}
+                        <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('.index_view') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 取消
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> 创建
+                    </button>
+                </div>
+            </form>
             {% endblock %}
-            {% block tail %}{% endblock %}
         </div>
     </div>
 </div>
-
-{% block extra_css %}
-<style>
-.admin-create-form {
-    max-width: 800px;
-    margin: 0 auto;
-}
-.form-group {
-    margin-bottom: 1.5rem;
-}
-.control-label {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-}
-.help-block {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-}
-</style>
 {% endblock %}
+
+{% block tail_js %}
+<script>
+$(document).ready(function() {
+    // 表单验证
+    $('form').on('submit', function() {
+        let isValid = true;
+        $('.form-control').each(function() {
+            if ($(this).prop('required') && !$(this).val()) {
+                $(this).addClass('is-invalid');
+                isValid = false;
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+        return isValid;
+    });
+});
+</script>
 {% endblock %}

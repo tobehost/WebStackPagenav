@@ -1,0 +1,120 @@
+{% extends 'admin/model/delete.html' %}
+
+{% block body %}
+  <h2>删除分类</h2>
+  {{ super() }}
+{% endblock %}
+
+{% block tail %}
+  {{ super() }}
+  <script>
+    // 自定义分类删除页面的JavaScript
+    $(document).ready(function() {
+      // 可以在这里添加确认对话框等
+    });
+  </script>
+{% endblock %}
+
+{% extends 'base.html' %}
+
+{% block title %}分类导航{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="category-list">
+        {% for category in categories %}
+        <div class="category-item">
+            <h3>{{ category.name }}</h3>
+            <ul>
+                {% for link in category.links %}
+                <li>
+                    <a href="{{ link.url }}" target="_blank">{{ link.title }}</a>
+                    {% if link.is_hot %}
+                    <span class="badge bg-danger">热门</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% extends 'admin/base.html' %}
+
+{% block body %}
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title mb-0">
+                <i class="fas fa-trash-alt"></i>
+                删除{{ admin_view.name }}
+            </h4>
+        </div>
+        <div class="card-body">
+            <p>您确定要删除以下{{ admin_view.name }}吗？此操作无法撤销。</p>
+            <ul>
+                {% for field in form %}
+                <li><strong>{{ field.label.text }}:</strong> {{ field.data }}</li>
+                {% endfor %}
+            </ul>
+            <form method="POST" action="delete_model">
+                {{ form.csrf_token }}
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('.index_view') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 取消
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> 删除
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% extends 'base.html' %}
+
+{% block title %}分类导航{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="category-list">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+            <a class="navbar-brand" href="{{ url_for('index') }}">首页</a>
+            <div class="collapse navbar-collapse">
+            </div>
+            <ul class="navbar-nav ml-auto">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.logout') }}">退出登录</a>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('auth.login') }}">登录</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    <div class="category-list">
+        {% for category in categories %}
+        <div class="category-item mb-4">
+            <h3>{{ category.name }}</h3>
+            <ul class="list-group">
+                {% for link in category.links %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <a href="{{ link.url }}" target="_blank">{{ link.title }}</a>
+                    {% if link.is_hot %}
+                    <span class="badge bg-danger">热门</span>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
